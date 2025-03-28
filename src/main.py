@@ -1,110 +1,163 @@
-from .expense_tracker import ExpenseTracker
-from .models import Category
+import os
+from datetime import datetime
+from typing import List, Dict
+from .expense_tracker import ExpenseTracker, Category
+from .visualization import ExpenseVisualizer
 
-def print_spending_insights(insights: dict, tracker: ExpenseTracker) -> None:
-    print("\nSpending Insights")
-    print("=" * 50)
+def clear_screen():
+    """Clear the terminal screen."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+def print_header():
+    """Print the application header."""
+    print("\n=== Expense Tracker ===")
+    print("=====================\n")
+
+def print_menu():
+    """Print the main menu options."""
+    print("1. Add Expense")
+    print("2. View All Expenses")
+    print("3. Generate Monthly Report")
+    print("4. Generate All Monthly Reports")
+    print("5. Exit")
+    print("\n=====================\n")
+
+def get_valid_amount() -> float:
+    """Get a valid amount from the user."""
+    while True:
+        try:
+            amount = float(input("Enter amount: $"))
+            if amount <= 0:
+                print("Amount must be greater than 0")
+                continue
+            return amount
+        except ValueError:
+            print("Please enter a valid number")
+
+def get_valid_date() -> datetime:
+    """Get a valid date from the user."""
+    while True:
+        try:
+            date_str = input("Enter date (YYYY-MM-DD): ")
+            return datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            print("Please enter a valid date in YYYY-MM-DD format")
+
+def get_valid_category() -> Category:
+    """Get a valid category from the user."""
+    print("\nAvailable categories:")
+    for i, category in enumerate(Category, 1):
+        print(f"{i}. {category.value}")
     
-    # Total Spending
-    print(f"\nTotal Spending: ${insights['total_spending']:.2f}")
+    while True:
+        try:
+            choice = int(input("\nEnter category number: "))
+            if 1 <= choice <= len(Category):
+                return list(Category)[choice - 1]
+            print("Invalid category number")
+        except ValueError:
+            print("Please enter a valid number")
+
+def get_valid_person() -> str:
+    """Get a valid person from the user."""
+    while True:
+        person = input("Enter person (Kylie/Jeff): ").strip()
+        if person in ["Kylie", "Jeff"]:
+            return person
+        print("Please enter either 'Kylie' or 'Jeff'")
+
+def add_expense(tracker: ExpenseTracker):
+    """Add a new expense."""
+    print("\n=== Add New Expense ===\n")
     
-    # Spending by Person
-    print("\nSpending by Person:")
-    print("-" * 30)
-    for person, amount in insights['spending_by_person'].items():
-        print(f"{person}: ${amount:.2f}")
+    amount = get_valid_amount()
+    date = get_valid_date()
+    category = get_valid_category()
+    person = get_valid_person()
+    description = input("Enter description: ").strip()
     
-    # Spending by Category
-    print("\nSpending by Category:")
-    print("-" * 30)
-    for category, amount in insights['spending_by_category'].items():
-        percentage = insights['spending_patterns']['spending_by_category_percentage'][category]
-        print(f"{category}: ${amount:.2f} ({percentage:.1f}%)")
+    tracker.add_expense(amount, date, category, person, description)
+    print("\nExpense added successfully!")
+
+def view_expenses(tracker: ExpenseTracker):
+    """View all expenses."""
+    print("\n=== All Expenses ===\n")
+    expenses = tracker.get_all_expenses()
     
-    # Monthly Trends
-    print("\nMonthly Spending Trends:")
-    print("-" * 30)
-    for month, amount in insights['monthly_trends'].items():
-        print(f"{month}: ${amount:.2f}")
+    if not expenses:
+        print("No expenses found.")
+        return
     
-    # Top Expenses
-    print("\nTop 5 Largest Expenses:")
-    print("-" * 30)
-    for expense in insights['top_expenses']:
-        print(f"${expense['amount']:.2f} - {expense['description']} ({expense['category']})")
+    for expense in expenses:
+        print(f"Date: {expense['date'].strftime('%Y-%m-%d')}")
+        print(f"Amount: ${expense['amount']:.2f}")
+        print(f"Category: {expense['category']}")
+        print(f"Person: {expense['person']}")
+        print(f"Description: {expense['description']}")
+        print("-" * 30)
+
+def generate_monthly_report(tracker: ExpenseTracker):
+    """Generate a report for a specific month."""
+    print("\n=== Generate Monthly Report ===\n")
     
-    # Spending Patterns
-    patterns = insights['spending_patterns']
-    print("\nSpending Patterns:")
-    print("-" * 30)
-    print(f"Average Monthly Spend: ${patterns['average_monthly_spend']:.2f}")
+    try:
+        year = int(input("Enter year (YYYY): "))
+        month = int(input("Enter month (1-12): "))
+        
+        if not (1 <= month <= 12):
+            print("Invalid month. Please enter a number between 1 and 12.")
+            return
+            
+        visualizer = ExpenseVisualizer(tracker.get_spending_insights())
+        report_path = visualizer.generate_monthly_report(month, year)
+        print(f"\nMonthly report generated successfully!")
+        print(f"Report saved to: {report_path}")
+        
+    except ValueError:
+        print("Please enter valid numbers for year and month.")
+
+def generate_all_monthly_reports(tracker: ExpenseTracker):
+    """Generate reports for all months in the dataset."""
+    print("\n=== Generating All Monthly Reports ===\n")
     
-    highest_month, amount = patterns['highest_spending_month']
-    print(f"Highest Spending Month: {highest_month.strftime('%Y-%m')} (${amount:.2f})")
+    visualizer = ExpenseVisualizer(tracker.get_spending_insights())
+    report_paths = visualizer.generate_all_monthly_reports()
     
-    most_expensive_category, amount = patterns['most_expensive_category']
-    print(f"Most Expensive Category: {most_expensive_category} (${amount:.2f})")
-    
-    print("\nSpending by Day of Week:")
-    for day, amount in patterns['spending_by_day_of_week'].items():
-        print(f"{day}: ${amount:.2f}")
+    print(f"\nGenerated {len(report_paths)} monthly reports:")
+    for path in report_paths:
+        print(f"- {path}")
 
 def main():
-    # Create an expense tracker for Alice and Bob
-    tracker = ExpenseTracker("Alice", "Bob")
+    """Main application loop."""
+    # Initialize the expense tracker with Google Sheet URL
+    sheet_url = "https://docs.google.com/spreadsheets/d/1rkVBCRISztia33SBiH1UFy8AeXvq9CN0HtwZ9CWZCME/edit?usp=sharing"
+    tracker = ExpenseTracker("Kylie", "Jeff", sheet_url)
     
-    # Add some sample expenses
-    tracker.add_expense(
-        "Weekly groceries",
-        120.50,
-        "Alice",
-        Category.GROCERIES
-    )
-    tracker.add_expense(
-        "Electric bill",
-        200.00,
-        "Bob",
-        Category.UTILITIES
-    )
-    tracker.add_expense(
-        "Movie night",
-        30.00,
-        "Alice",
-        Category.ENTERTAINMENT
-    )
-    tracker.add_expense(
-        "Monthly rent",
-        2500.00,
-        "Bob",
-        Category.RENT
-    )
-    tracker.add_expense(
-        "Dinner at restaurant",
-        85.00,
-        "Alice",
-        Category.DINING
-    )
+    # Load latest data from Google Sheet
+    tracker.load_from_sheets()
     
-    # Add some shared expenses
-    tracker.add_expense(
-        "Vacation fund",
-        500.00,
-        "Shared",
-        Category.OTHER
-    )
-    tracker.add_expense(
-        "Home improvement",
-        1000.00,
-        "Shared",
-        Category.OTHER
-    )
-    
-    # Get and print spending insights
-    insights = tracker.get_spending_insights()
-    print_spending_insights(insights, tracker)
-    
-    # Export to CSV
-    tracker.export_to_csv()
+    while True:
+        clear_screen()
+        print_header()
+        print_menu()
+        
+        choice = input("Enter your choice (1-5): ").strip()
+        
+        if choice == "1":
+            add_expense(tracker)
+        elif choice == "2":
+            view_expenses(tracker)
+        elif choice == "3":
+            generate_monthly_report(tracker)
+        elif choice == "4":
+            generate_all_monthly_reports(tracker)
+        elif choice == "5":
+            print("\nThank you for using Expense Tracker!")
+            break
+        else:
+            print("\nInvalid choice. Please try again.")
+        
+        input("\nPress Enter to continue...")
 
 if __name__ == "__main__":
     main() 

@@ -1,0 +1,49 @@
+{
+  "person1": "Kylie",
+  "person2": "Jeff",
+  "shared": "Shared",
+  "expenses": [
+    {
+      "description": "Shoes",
+      "amount": 120.0,
+      "paid_by": "Kylie",
+      "category": "Shopping",
+      "date": "2025-03-28"
+    },
+    {
+      "description": "Pants",
+      "amount": 100.0,
+      "paid_by": "Jeff",
+      "category": "Shopping",
+      "date": "2025-03-28"
+    },
+    {
+      "description": "Trader Joes",
+      "amount": 50.0,
+      "paid_by": "Shared",
+      "category": "Groceries",
+      "date": "2025-03-28"
+    },
+    {
+      "description": "Gas",
+      "amount": 30.0,
+      "paid_by": "Kylie",
+      "category": "Transport",
+      "date": "2025-03-28"
+    },
+    {
+      "description": "Coffee",
+      "amount": 4.0,
+      "paid_by": "Jeff",
+      "category": "Dining",
+      "date": "2025-03-28"
+    },
+    {
+      "description": "Water Bill",
+      "amount": 300.0,
+      "paid_by": "Shared",
+      "category": "Utilities",
+      "date": "2025-03-25"
+    }
+  ]
+}

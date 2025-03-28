@@ -1,9 +1,7 @@
 from datetime import datetime
 from typing import List, Dict
 from enum import Enum
-import json
-from dataclasses import dataclass, asdict
-from pathlib import Path
+from dataclasses import dataclass
 
 class Category(Enum):
     GROCERIES = "Groceries"
@@ -12,8 +10,8 @@ class Category(Enum):
     ENTERTAINMENT = "Entertainment"
     DINING = "Dining"
     TRANSPORT = "Transport"
-    SHOPPING = "Shopping"
     SHARED = "Shared"  # For expenses that are shared between both people
+    SHOPPING = "Shopping"  # For shopping expenses
     OTHER = "Other"
 
     @classmethod
@@ -34,15 +32,23 @@ class Expense:
             "amount": self.amount,
             "paid_by": self.paid_by,
             "category": self.category.value,
-            "date": self.date.isoformat()
+            "date": self.date.strftime("%Y-%m-%d")  # Format date as YYYY-MM-DD
         }
 
     @classmethod
     def from_dict(cls, data: Dict) -> 'Expense':
+        # Handle both ISO format and YYYY-MM-DD format
+        date_str = data["date"]
+        try:
+            date = datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            # Try parsing ISO format by taking just the date part
+            date = datetime.fromisoformat(date_str).replace(hour=0, minute=0, second=0, microsecond=0)
+        
         return cls(
             description=data["description"],
             amount=data["amount"],
             paid_by=data["paid_by"],
             category=Category(data["category"]),
-            date=datetime.fromisoformat(data["date"])
+            date=date
         ) 
