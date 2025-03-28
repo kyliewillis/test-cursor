@@ -1,0 +1,3 @@
+"""
+Shared Expense Tracker package.
+""" 
